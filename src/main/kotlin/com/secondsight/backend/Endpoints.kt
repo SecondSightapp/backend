@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
-@RestController
+@RestController(value = "/notes")
 class NoteController {
-    @GetMapping("/notes")
+    @GetMapping()
     fun getNotes(): List<Note> {
         // This is a dummy implementation. In a real application, you would fetch notes from a database
         return listOf(
@@ -30,7 +30,7 @@ class NoteController {
         )
     }
 
-    @PostMapping("/notes")
+    @PostMapping()
     fun createNote(@RequestBody note: Note): Note {
         // This is a dummy implementation. In a real application, you would save the note to a database
         return note
