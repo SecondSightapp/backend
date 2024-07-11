@@ -21,7 +21,12 @@ class NoteController {
                 2,
                 "Second Note",
                 "This is the content of the second note"
-            )
+            ),
+            Note (
+                3,
+                "Third Note",
+                "This is the content of the third note",
+        )
         )
     }
 
