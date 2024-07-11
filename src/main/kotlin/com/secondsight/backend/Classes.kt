@@ -1,23 +1,36 @@
 package com.secondsight.backend
 
-import java.util.*
+import jakarta.persistence.*
+import java.util.Date
 
-/**
- * User class
- */
-class User (
-    val id: Int,
+@Entity
+data class User (
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long,
     val name: String,
     val email: String,
-    val notes: List<Note>,
-    
-) {
 
+    @OneToMany(mappedBy = "owner", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    val notes: List<Note> = mutableListOf()
+) {
 }
 
+@Entity
+data class Note(
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long,
+    val title: String,
+    val content: String,
 
-/**
- * TODO: implement
- */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    // TODO don't make this nullable
+    val owner: User? = null,
 
-class Note (val id: Int, val owner: User, val createdAt: Date, val updatedAt: Date, )
+    @Temporal(TemporalType.TIMESTAMP)
+    val createdAt: Date = Date(),
+
+    @Temporal(TemporalType.TIMESTAMP)
+    val updatedAt: Date = Date()
+)
+

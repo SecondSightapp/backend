@@ -38,3 +38,6 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+## for security reasons
+src/main/resources/serviceAccountKey.json
