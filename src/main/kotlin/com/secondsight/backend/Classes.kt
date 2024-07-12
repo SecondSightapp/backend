@@ -34,3 +34,23 @@ data class Note(
     val updatedAt: Date = Date()
 )
 
+@Entity
+data class StarEntity(
+        @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+        val id: Long,
+
+        @Enumerated(EnumType.STRING)
+        val mood: Mood,
+
+        @Temporal(TemporalType.DATE)
+        val date: Date,
+
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "user_id")
+        val user: User
+)
+
+enum class Mood {
+    SAD, MEDIUM, HAPPY
+}
+
