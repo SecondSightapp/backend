@@ -19,6 +19,7 @@ data class User (
 data class Note(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long,
+    
     val title: String,
     val content: String,
 
@@ -33,6 +34,8 @@ data class Note(
     @Temporal(TemporalType.TIMESTAMP)
     val updatedAt: Date = Date()
 )
+
+
 
 @Entity
 data class StarEntity(

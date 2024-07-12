@@ -28,7 +28,7 @@ class BackendApplication {
 
         val options = FirebaseOptions.builder()
             .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-            .setDatabaseUrl("https://your-project-id.firebaseio.com")
+            .setDatabaseUrl(firebaseDatabaseURL)
             .build()
 
         return FirebaseApp.initializeApp(options)
