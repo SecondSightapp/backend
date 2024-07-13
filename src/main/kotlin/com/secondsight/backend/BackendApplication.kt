@@ -13,28 +13,26 @@ import java.io.FileInputStream
 
 
 // TODO fix this
-private const val firebaseDatabaseURL = "https://secondsight-1-default-rtdb.firebaseio.com"
 
 @SpringBootApplication(exclude = [DataSourceAutoConfiguration::class])
 class BackendApplication {
-    /**
-     * Initializes firebase for use within the project.
-     * the @Bean annotation ensure that this method is called when the application starts.
-     */
-    @Bean
-    fun initializeFirebaseApp(): FirebaseApp {
-        // Point this to the serviceAccountKey.json found under the resources folder in the src/main/resources folder
-        val serviceAccount = FileInputStream("./src/main/resources/serviceAccountKey.json")
 
-        val options = FirebaseOptions.builder()
-            .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-            .setDatabaseUrl(firebaseDatabaseURL)
-            .build()
+}
 
-        return FirebaseApp.initializeApp(options)
+fun initializeFirebaseApp() {
+    // Point this to the serviceAccountKey.json found under the resources folder in the src/main/resources folder
+    val serviceAccount = FileInputStream("./src/main/resources/serviceAccountKey.json")
+
+    val options = FirebaseOptions.builder()
+        .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+        .build()
+
+    if (FirebaseApp.getApps().isEmpty()) {
+        FirebaseApp.initializeApp(options)
     }
 }
 
 fun main(args: Array<String>) {
+    initializeFirebaseApp();
     runApplication<BackendApplication>(*args)
 }
