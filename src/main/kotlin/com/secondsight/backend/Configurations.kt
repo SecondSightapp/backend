@@ -1,7 +1,10 @@
 package com.secondsight.backend
 
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.security.Keys
 import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.AuthenticationProvider
@@ -15,9 +18,17 @@ import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User
 import org.springframework.security.oauth2.core.user.OAuth2User
+import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.oauth2.jwt.JwtClaimsSet
+import org.springframework.security.oauth2.jwt.JwtDecoder
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.stereotype.Service
+import java.nio.charset.StandardCharsets
+import java.time.Instant
 import java.util.*
+import javax.crypto.spec.SecretKeySpec
 
 
 class FirebaseAuthenticationProvider : AuthenticationProvider {
@@ -37,12 +48,19 @@ class FirebaseAuthenticationProvider : AuthenticationProvider {
 @Configuration
 @EnableWebSecurity
 class SecurityConfig {
+
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http
             .authorizeHttpRequests {
                 it.requestMatchers("/public/**").permitAll()
                 it.anyRequest().authenticated()
+            }
+            .oauth2ResourceServer { oauth2 ->
+                oauth2.jwt { jwt ->
+                    jwt.decoder(jwtDecoder())
+                    jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())
+                }
             }
             .oauth2Login {
                 it.userInfoEndpoint {
@@ -53,8 +71,36 @@ class SecurityConfig {
         return http.build()
     }
 
-    private fun defaultUserService(): OAuth2UserService<OAuth2UserRequest, OAuth2User> {
-        return UserService(UserRepository())
+    @Autowired
+    private lateinit var tokenService: TokenService
+
+    @Bean
+    fun jwtDecoder(): JwtDecoder = JwtDecoder { jwtToken ->
+        val claims = tokenService.getAllClaims(jwtToken)
+        val claimsSetBuilder = JwtClaimsSet.builder()
+        claims.forEach { claimsSetBuilder.claim(it.key, it.value) }
+        val jwtClaimsSet = claimsSetBuilder.build()
+        Jwt.withTokenValue(jwtToken)
+            .header("alg", "HS256")
+            .claims { jwtClaimsSet.claims }
+            .issuedAt(Instant.ofEpochMilli(claims.issuedAt.time))
+            .expiresAt(Instant.ofEpochMilli(claims.expiration.time))
+            .build()
+        throw IllegalArgumentException("Invalid JWT Token")
+    }
+
+    @Bean
+    fun jwtAuthenticationConverter(): JwtAuthenticationConverter {
+        val converter = JwtAuthenticationConverter()
+        // Here, you can customize the converter if needed. For example, setting a custom GrantedAuthoritiesMapper.
+        return converter
+    }
+
+    @Bean
+    fun defaultUserService(): OAuth2UserService<OAuth2UserRequest, OAuth2User> {
+        val userService = UserService(UserRepository())
+
+        return userService
     }
 }
 

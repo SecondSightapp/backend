@@ -2,12 +2,18 @@ package com.secondsight.backend
 
 import com.google.cloud.firestore.Firestore
 import com.google.firebase.cloud.FirestoreClient
+import io.jsonwebtoken.Claims
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.security.Keys
 import jakarta.persistence.*
+import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.stereotype.Repository
+import org.springframework.stereotype.Service
 import java.util.*
 
 @Entity
@@ -104,5 +110,57 @@ data class StarEntity(
 
 enum class Mood {
     SAD, MEDIUM, HAPPY
+}
+
+data class JwtProperties(
+    val key: String,
+    val accessTokenExpiration: Long,
+    val refreshTokenExpiration: Long,
+)
+
+@Service
+class TokenService() {
+    private val jwtProperties: JwtProperties = JwtProperties(
+        "Basedgoat is the best".repeat(13) + "aaaaa",
+        1000 * 60 * 60 * 24,
+        1000 * 60 * 60 * 24 * 30
+    )
+
+    private val secretKey = Keys.hmacShaKeyFor(
+        jwtProperties.key.toByteArray()
+    )
+
+    fun generate(
+        userDetails: UserDetails,
+        expirationDate: Date,
+        additionalClaims: Map<String, Any> = emptyMap()
+    ): String =
+        Jwts.builder()
+            .claims()
+            .subject(userDetails.username)
+            .issuedAt(Date(System.currentTimeMillis()))
+            .expiration(expirationDate)
+            .add(additionalClaims)
+            .and()
+            .signWith(secretKey)
+            .compact()
+    fun isValid(token: String, user: OAuth2User): Boolean {
+        return true
+    }
+    fun extractEmail(token: String): String? =
+        getAllClaims(token)
+            .subject
+    fun isExpired(token: String): Boolean =
+        getAllClaims(token)
+            .expiration
+            .before(Date(System.currentTimeMillis()))
+    fun getAllClaims(token: String): Claims {
+        val parser = Jwts.parser()
+            .verifyWith(secretKey)
+            .build()
+        return parser
+            .parseSignedClaims(token)
+            .payload
+    }
 }
 
