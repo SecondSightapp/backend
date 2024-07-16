@@ -5,6 +5,7 @@ plugins {
     kotlin("plugin.jpa") version "1.9.24"
     kotlin("jvm") version "2.0.0"
     kotlin("plugin.spring") version "1.9.24"
+    kotlin("plugin.serialization") version "1.8.20"
 }
 
 group = "com.secondsight"
@@ -37,6 +38,8 @@ dependencies {
     implementation("com.google.firebase:firebase-admin:9.3.0")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("io.jsonwebtoken:jjwt:0.12.6")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
     runtimeOnly("io.jsonwebtoken:jjwt-api:0.12.6")
     testImplementation("org.springframework.boot:spring-boot-starter-test")

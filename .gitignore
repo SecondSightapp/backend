@@ -41,3 +41,4 @@ out/
 
 ## for security reasons
 src/main/resources/serviceAccountKey.json
+src/main/resources/local.properties
