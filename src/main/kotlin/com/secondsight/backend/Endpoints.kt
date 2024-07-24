@@ -9,8 +9,11 @@ import com.nimbusds.jose.proc.SecurityContext
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import io.jsonwebtoken.security.SignatureAlgorithm
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.security.config.annotation.authentication.configurers.provisioning.UserDetailsManagerConfigurer.UserDetailsBuilder
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.security.oauth2.jwt.*
@@ -22,9 +25,9 @@ import java.time.Instant
 import java.util.*
 import javax.crypto.spec.SecretKeySpec
 
-@RestController(value = "/public/notes")
+@RestController(value = "/notes")
 class NoteController {
-    @PostMapping()
+    @PostMapping
     fun createNote(@RequestBody note: Note): Note {
         // This is a dummy implementation. In a real application, you would save the note to a database
         return note
@@ -32,7 +35,8 @@ class NoteController {
 }
 
 @RestController
-class UserController {
+class UserController (@Autowired val tokenService: TokenService){
+
     @GetMapping("/user")
     fun user(@AuthenticationPrincipal user: OAuth2User): Map<String, Any?> {
         return user.attributes
@@ -40,6 +44,14 @@ class UserController {
 
     @GetMapping("/authenticate")
     fun generateJWT(@AuthenticationPrincipal user: OAuth2User): String {
-        return TODO("Generate JWT token here")
+        return tokenService.generate(expirationDate = Date(), userDetails = user,)
+    }
+}
+
+@RestController
+class StarController {
+    @GetMapping("/stars")
+    fun getRecentStars(@AuthenticationPrincipal user: OAuth2User):Map<String, Any?>  {
+        return mapOf ()
     }
 }
