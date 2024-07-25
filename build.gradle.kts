@@ -25,6 +25,7 @@ repositories {
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0-RC")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0-RC")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.9.0-RC")
     implementation("jakarta.persistence:jakarta.persistence-api:3.0.0")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-data-rest")
@@ -46,6 +47,8 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.springframework.security:spring-security-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    implementation("org.reactivestreams:reactive-streams:1.0.3")
+    implementation("io.projectreactor:reactor-core:3.5.0")
 }
 
 kotlin {

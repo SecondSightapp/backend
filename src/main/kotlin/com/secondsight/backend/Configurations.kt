@@ -62,8 +62,8 @@ class SecurityConfig {
                     jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())
                 }
             }
-            .oauth2Login {
-                it.userInfoEndpoint {
+            .oauth2Login { oauth2 ->
+                oauth2.userInfoEndpoint {
                     it.userService(defaultUserService())
                 }
             }
@@ -83,10 +83,10 @@ class SecurityConfig {
         Jwt.withTokenValue(jwtToken)
             .header("alg", "HS256")
             .claims { jwtClaimsSet.claims }
+            .subject( jwtClaimsSet.subject )
             .issuedAt(Instant.ofEpochMilli(claims.issuedAt.time))
             .expiresAt(Instant.ofEpochMilli(claims.expiration.time))
             .build()
-        throw IllegalArgumentException("Invalid JWT Token")
     }
 
     @Bean

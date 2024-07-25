@@ -6,13 +6,10 @@ import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import jakarta.persistence.*
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
-import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.stereotype.Repository
 import org.springframework.stereotype.Service
@@ -26,10 +23,10 @@ data class User(
     val email: String,
 
     @OneToMany(mappedBy = "owner", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    val notes: List<Note> = mutableListOf(),
+    val notes: MutableList<Note> = mutableListOf(),
 
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    val stars: List<StarEntity> = mutableListOf(),
+    val stars: MutableList<Star> = mutableListOf(),
 ) : OAuth2User {
     init {
         require(identity.isNotBlank()) { "Name must not be blank" }
@@ -118,21 +115,25 @@ class UserRepository{
 
 @Entity
 data class Note(
+    /**
+     * TODO: There's a better way of doing this.
+     */
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: String,
+    var id: String = "PLACEHOLDER",
 
     val title: String,
     val content: String,
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    val owner: User,
 
     @Temporal(TemporalType.TIMESTAMP)
     val createdAt: Date = Date(),
 
     @Temporal(TemporalType.TIMESTAMP)
     val updatedAt: Date = Date()
+)
+
+data class NoteDTO (
+    val title: String,
+    val content: String,
 )
 
 @Repository
@@ -149,10 +150,22 @@ class NoteRepository (
      * @param note the note to add
      * @return the created note
      */
-    suspend fun createNote(note: Note): Note {
+    suspend fun createNote(user: User, note: Note): Note {
         val newNote = db.collection("notes").document()
         note.id = newNote.id
+        user.notes.add(note)
+        userRepository.updateUser(user)
         runBlocking { newNote.set(note).get() }
+        return note
+    }
+
+    /**
+     * Updates a note and adds it to the Firestore Database
+     * @param note the note to update
+     * @return the updated note
+     */
+    suspend fun updateNote(note: Note): Note {
+        val res = runBlocking { db.collection("notes").document(note.id).set(note).get() }
         return note
     }
 
@@ -189,7 +202,7 @@ class NoteRepository (
 
 
 @Entity
-data class StarEntity(
+data class Star(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: String,
 
@@ -203,6 +216,34 @@ data class StarEntity(
     @JoinColumn(name = "user_id")
     val user: User
 )
+
+@Repository
+class StarRepository (
+    @Autowired val userRepository: UserRepository
+){
+    private val db = FirestoreClient.getFirestore()
+
+    /**
+     * Get all stars for a user by their id
+     * @param userId id of the user to get the stars for
+     * @return a list of stars by that user
+     */
+    suspend fun getStarsByUserId(userId: String): List<Star> {
+        val user = runBlocking { userRepository.findById(userId) }
+        return user?.stars ?: listOf()
+    }
+
+    /**
+     * Get all stars for a user by their email
+     * @param email email of the user to get the stars for
+     * @return a list of stars by that user
+     */
+    suspend fun getStarsByEmail(email: String): List<Star> {
+        val user = runBlocking { userRepository.findByEmail(email) }
+        return user?.stars ?: listOf()
+    }
+
+}
 
 enum class Mood {
     SAD, MEDIUM, HAPPY

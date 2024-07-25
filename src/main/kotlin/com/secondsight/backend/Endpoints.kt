@@ -1,57 +1,71 @@
 package com.secondsight.backend
 
 // Sample end points for fetching and creating notes
-import com.nimbusds.jose.JWSAlgorithm
-import com.nimbusds.jose.jwk.KeyUse
-import com.nimbusds.jose.jwk.OctetSequenceKey
-import com.nimbusds.jose.jwk.source.JWKSource
-import com.nimbusds.jose.proc.SecurityContext
-import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.security.Keys
-import io.jsonwebtoken.security.SignatureAlgorithm
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.security.config.annotation.authentication.configurers.provisioning.UserDetailsManagerConfigurer.UserDetailsBuilder
+import org.springframework.security.authentication.AuthenticationServiceException
 import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.security.core.userdetails.UserDetails
-import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.security.oauth2.jwt.*
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
-import java.time.Instant
 import java.util.*
-import javax.crypto.spec.SecretKeySpec
 
-@RestController(value = "/notes")
-class NoteController {
-    @PostMapping
-    fun createNote(@RequestBody note: Note): Note {
-        // This is a dummy implementation. In a real application, you would save the note to a database
-        return note
-    }
-}
+/**
+ * Right now, 30 minutes I believe. This is the time in milliseconds
+ */
+private const val JWT_EXPIRATION_TIME = 1_800_000
 
 @RestController
-class UserController (@Autowired val tokenService: TokenService){
+class UserController(
+    @Autowired val tokenService: TokenService,
+    @Autowired val userRepository: UserRepository,
+){
 
     @GetMapping("/user")
-    fun user(@AuthenticationPrincipal user: OAuth2User): Map<String, Any?> {
+    fun testUserOAuth2Endpoint(@AuthenticationPrincipal user: OAuth2User): Map<String, Any?> {
         return user.attributes
     }
 
     @GetMapping("/authenticate")
     fun generateJWT(@AuthenticationPrincipal user: OAuth2User): String {
-        return tokenService.generate(expirationDate = Date(), userDetails = user,)
+        return tokenService.generate(expirationDate = Date(System.currentTimeMillis() + JWT_EXPIRATION_TIME), userDetails = user,)
+    }
+}
+
+@RestController()
+class NoteController(
+    @Autowired val userRepository: UserRepository,
+    @Autowired val noteRepository: NoteRepository
+) {
+    @GetMapping("/user/notes")
+    suspend fun getNotes(@AuthenticationPrincipal principal: Jwt): List<Note> {
+        val user = userRepository.findByEmail(principal.subject)
+        return user?.notes ?: listOf()
+    }
+
+    @PostMapping("/user/notes")
+    suspend fun createNote(@AuthenticationPrincipal principal: Jwt, @RequestBody note: NoteDTO): Note {
+        // This is a dummy implementation. In a real application, you would save the note to a database
+        val user = userRepository.findByEmail(principal.subject) ?: throw AuthenticationServiceException("User from JWT not found. ")
+        return noteRepository.createNote(user, Note(title = note.title, content = note.content))
+    }
+
+    @PutMapping("/user/notes/id")
+    suspend fun updateNote(@AuthenticationPrincipal principal: Jwt, @RequestBody note: NoteDTO): Note {
+        return noteRepository.updateNote(Note(title = note.title, content = note.content))
     }
 }
 
 @RestController
-class StarController {
+class StarController (
+    @Autowired val userRepository: UserRepository
+) {
     @GetMapping("/stars")
-    fun getRecentStars(@AuthenticationPrincipal user: OAuth2User):Map<String, Any?>  {
-        return mapOf ()
+    suspend fun getRecentStars(@AuthenticationPrincipal principal: Jwt):Map<String, Any?>  {
+        val user = userRepository.findByEmail(principal.subject)
+        return mapOf("stars" to user?.stars)
     }
 }
