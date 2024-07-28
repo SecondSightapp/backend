@@ -200,6 +200,9 @@ class NoteRepository (
 
 }
 
+enum class Mood {
+    SAD, MEDIUM, HAPPY
+}
 
 @Entity
 data class Star(
@@ -216,6 +219,8 @@ data class Star(
     @JoinColumn(name = "user_id")
     val user: User
 )
+
+data class StarDTO (val mood: Mood, val date: Date)
 
 @Repository
 class StarRepository (
@@ -243,10 +248,24 @@ class StarRepository (
         return user?.stars ?: listOf()
     }
 
-}
-
-enum class Mood {
-    SAD, MEDIUM, HAPPY
+    /**
+     * Create a star
+     * @param star the star to create, in starDTO form
+     * @return the created star
+     */
+    suspend fun createStar(user: User, star: StarDTO): Star {
+        val newStar = db.collection("stars").document()
+        val newStarObj = Star(
+            id = newStar.id,
+            mood = star.mood,
+            date = star.date,
+            user = user
+        )
+        user.stars.add(newStarObj)
+        userRepository.updateUser(user)
+        runBlocking { newStar.set(newStarObj).get() }
+        return newStarObj
+    }
 }
 
 data class JwtProperties(

@@ -7,6 +7,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.security.oauth2.jwt.*
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -40,32 +41,39 @@ class NoteController(
     @Autowired val userRepository: UserRepository,
     @Autowired val noteRepository: NoteRepository
 ) {
-    @GetMapping("/user/notes")
+    @GetMapping("/notes")
     suspend fun getNotes(@AuthenticationPrincipal principal: Jwt): List<Note> {
         val user = userRepository.findByEmail(principal.subject)
         return user?.notes ?: listOf()
     }
 
-    @PostMapping("/user/notes")
+    @PostMapping("/notes")
     suspend fun createNote(@AuthenticationPrincipal principal: Jwt, @RequestBody note: NoteDTO): Note {
         // This is a dummy implementation. In a real application, you would save the note to a database
         val user = userRepository.findByEmail(principal.subject) ?: throw AuthenticationServiceException("User from JWT not found. ")
         return noteRepository.createNote(user, Note(title = note.title, content = note.content))
     }
 
-    @PutMapping("/user/notes/id")
-    suspend fun updateNote(@AuthenticationPrincipal principal: Jwt, @RequestBody note: NoteDTO): Note {
-        return noteRepository.updateNote(Note(title = note.title, content = note.content))
+    @PutMapping("/notes/{id}")
+    suspend fun updateNote(@AuthenticationPrincipal principal: Jwt, @RequestBody note: NoteDTO, @PathVariable id: String): Note {
+        return noteRepository.updateNote(Note(id = id, title = note.title, content = note.content))
     }
 }
 
 @RestController
 class StarController (
-    @Autowired val userRepository: UserRepository
+    @Autowired val userRepository: UserRepository,
+    @Autowired val starRepository: StarRepository
 ) {
     @GetMapping("/stars")
     suspend fun getRecentStars(@AuthenticationPrincipal principal: Jwt):Map<String, Any?>  {
         val user = userRepository.findByEmail(principal.subject)
         return mapOf("stars" to user?.stars)
+    }
+
+    @PostMapping("/stars")
+    suspend fun createStar(@AuthenticationPrincipal principal: Jwt, @RequestBody star: StarDTO): Star {
+        val user = userRepository.findByEmail(principal.subject) ?: throw AuthenticationServiceException("User from JWT not found. ")
+        return starRepository.createStar(user, star)
     }
 }
