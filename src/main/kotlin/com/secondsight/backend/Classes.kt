@@ -266,6 +266,11 @@ class StarRepository (
         runBlocking { newStar.set(newStarObj).get() }
         return newStarObj
     }
+
+    fun updateStar(user: User, id: String, star: StarDTO): Star {
+        val res = runBlocking { db.collection("stars").document(id).set(star).get() }
+        return Star(id, star.mood, star.date, user)
+    }
 }
 
 data class JwtProperties(

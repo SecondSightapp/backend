@@ -76,4 +76,10 @@ class StarController (
         val user = userRepository.findByEmail(principal.subject) ?: throw AuthenticationServiceException("User from JWT not found. ")
         return starRepository.createStar(user, star)
     }
+
+    @PutMapping("/stars/{id}")
+    suspend fun updateStar(@AuthenticationPrincipal principal: Jwt, @RequestBody star: StarDTO, @PathVariable id: String): Star {
+        val user = userRepository.findByEmail(principal.subject) ?: throw AuthenticationServiceException("User from JWT not found. ")
+        return starRepository.updateStar(user, id, star)
+    }
 }
