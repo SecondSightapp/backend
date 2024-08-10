@@ -6,6 +6,8 @@ import org.springframework.security.authentication.AuthenticationServiceExceptio
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.security.oauth2.jwt.*
+import org.springframework.stereotype.Controller
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -26,12 +28,14 @@ class UserController(
 ){
 
     @GetMapping("/user")
-    fun testUserOAuth2Endpoint(@AuthenticationPrincipal user: OAuth2User): Map<String, Any?> {
-        return user.attributes
+    suspend fun testUserOAuth2Endpoint(@AuthenticationPrincipal jwt: Jwt): Map<String, Any?> {
+        val user = userRepository.findByEmail(jwt.subject)
+        return mapOf("user" to user)
     }
 
     @GetMapping("/authenticate")
     fun generateJWT(@AuthenticationPrincipal user: OAuth2User): String {
+        println(Date(System.currentTimeMillis() + JWT_EXPIRATION_TIME))
         return tokenService.generate(expirationDate = Date(System.currentTimeMillis() + JWT_EXPIRATION_TIME), userDetails = user,)
     }
 }
@@ -58,6 +62,11 @@ class NoteController(
     suspend fun updateNote(@AuthenticationPrincipal principal: Jwt, @RequestBody note: NoteDTO, @PathVariable id: String): Note {
         return noteRepository.updateNote(Note(id = id, title = note.title, content = note.content))
     }
+
+    @DeleteMapping("/notes/{id}")
+    suspend fun deleteNote(@AuthenticationPrincipal principal: Jwt, @PathVariable id: String): Boolean {
+        return noteRepository.deleteNote(id)
+    }
 }
 
 @RestController
@@ -81,5 +90,22 @@ class StarController (
     suspend fun updateStar(@AuthenticationPrincipal principal: Jwt, @RequestBody star: StarDTO, @PathVariable id: String): Star {
         val user = userRepository.findByEmail(principal.subject) ?: throw AuthenticationServiceException("User from JWT not found. ")
         return starRepository.updateStar(user, id, star)
+    }
+}
+
+@RestController
+class AIInsightController (
+    @Autowired val userRepository: UserRepository,
+    @Autowired val noteRepository: NoteRepository,
+    @Autowired val starRepository: StarRepository
+) {
+    @GetMapping("/insight")
+    suspend fun getInsight(@AuthenticationPrincipal principal: Jwt): Map<String, Any?> {
+        val user = userRepository.findByEmail(principal.subject) ?: throw AuthenticationServiceException("User from JWT not found. ")
+        val notes = noteRepository.getNotesByUserId(user.id).joinToString(separator = " ") { it.content}
+        val stars = starRepository.getStarsByUserId(user.id).joinToString(separator = " ") { it.mood.toString() }
+        val prompt = "draw me a picture"
+
+        return mapOf("based" to "goat")
     }
 }

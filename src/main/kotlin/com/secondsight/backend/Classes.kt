@@ -41,6 +41,7 @@ data class User(
         return mutableMapOf (
             "id" to id,
             "name" to identity,
+            "identity" to identity,
             "email" to email,
             "notes" to notes,
             "stars" to stars,
@@ -55,7 +56,7 @@ data class User(
 
 // Create a user repository interface
 @Repository
-class UserRepository{
+class UserRepository {
     /**
      * Initializes a connection to the Firestore Database
      */
@@ -198,10 +199,15 @@ class NoteRepository (
         return user?.notes ?: listOf()
     }
 
+    suspend fun deleteNote(id: String): Boolean {
+        val res = runBlocking { db.collection("notes").document(id).delete().get() }
+        return true
+    }
+
 }
 
-enum class Mood {
-    SAD, MEDIUM, HAPPY
+enum class Mood (name: String) {
+    SAD("SAD"), MEDIUM("MEDIUM"), HAPPY("HAPPY")
 }
 
 @Entity
@@ -304,8 +310,7 @@ class TokenService(
     }
 
     fun isValid(token: String, user: OAuth2User): Boolean {
-        // what the heck
-        return true
+        return !isExpired(token) && extractEmail(token) == user.getAttribute("email")
     }
 
     fun extractEmail(token: String): String? = getAllClaims(token).subject
