@@ -1,10 +1,7 @@
 package com.secondsight.backend
 
-import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.security.Keys
 import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.AuthenticationProvider
@@ -21,15 +18,11 @@ import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtClaimsSet
 import org.springframework.security.oauth2.jwt.JwtDecoder
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.stereotype.Service
-import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.*
-import javax.crypto.spec.SecretKeySpec
-
 
 class FirebaseAuthenticationProvider : AuthenticationProvider {
 

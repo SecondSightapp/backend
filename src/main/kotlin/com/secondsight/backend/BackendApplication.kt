@@ -31,7 +31,13 @@ fun initializeFirebaseApp() {
     }
 }
 
-fun main(args: Array<String>) {
-    initializeFirebaseApp();
-    runApplication<BackendApplication>(*args)
+class Main {
+    companion object {
+        @JvmStatic
+        fun main(args: Array<String>) {
+            initializeFirebaseApp()
+            runApplication<BackendApplication>(*args)
+        }
+    }
 }
+

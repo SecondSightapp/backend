@@ -35,7 +35,6 @@ class UserController(
 
     @GetMapping("/authenticate")
     fun generateJWT(@AuthenticationPrincipal user: OAuth2User): String {
-        println(Date(System.currentTimeMillis() + JWT_EXPIRATION_TIME))
         return tokenService.generate(expirationDate = Date(System.currentTimeMillis() + JWT_EXPIRATION_TIME), userDetails = user,)
     }
 }
@@ -102,10 +101,19 @@ class AIInsightController (
     @GetMapping("/insight")
     suspend fun getInsight(@AuthenticationPrincipal principal: Jwt): Map<String, Any?> {
         val user = userRepository.findByEmail(principal.subject) ?: throw AuthenticationServiceException("User from JWT not found. ")
-        val notes = noteRepository.getNotesByUserId(user.id).joinToString(separator = " ") { it.content}
-        val stars = starRepository.getStarsByUserId(user.id).joinToString(separator = " ") { it.mood.toString() }
-        val prompt = "draw me a picture"
+        val notes = noteRepository.getNotesByUserId(user.id).joinToString(separator = "| |") { it.content}
+        val stars = starRepository.getStarsByUserId(user.id).joinToString(separator = "| |") { it.mood.toString() }
+        val prompt = "You are an AI assistant with the purpose of illuminating insights into one's physiological health and mental well-being. " +
+                "Based on the notes and stars you have provided, please generate insightful commentary identifying patterns and trends in the user's mental health and well-being," +
+                " as well as feedback for what the user may do." +
+                "Notes: $notes" +
+                "Stars: $stars"
 
-        return mapOf("based" to "goat")
+        println(prompt)
+
+        val response = "You are doing well. Keep it up!"
+
+
+        return mapOf("response" to response)
     }
 }

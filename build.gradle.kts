@@ -60,3 +60,9 @@ kotlin {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
+
+// Ensure the jar task is configured in build.gradle.kts
+tasks.jar {
+    archiveBaseName.set("your-application-name")
+    archiveVersion.set("0.0.1-SNAPSHOT")
+}

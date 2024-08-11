@@ -62,7 +62,7 @@ fun processResponse(response: ApiResponse): String {
 }
 
 // Main function to test the API call
-fun main() {
+fun bruhmoment() {
     val prompt = "Your prompt here"
     val response = queryApi(prompt)
     response?.let {
